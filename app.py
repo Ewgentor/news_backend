@@ -1,27 +1,18 @@
 from flask import Flask, redirect, url_for, request, abort
+from faker import Faker
+import random
 
 app = Flask(__name__)
+fake = Faker()
 
-news = [
-    {
-        'title': "Lorem Ipsum1",
-        'text': "",
-        'img': "",
-        'tags': []
-    },
-    {
-        'title': "Lorem Ipsum2",
-        'text': "",
-        'img': "",
-        'tags': []
-    },
-    {
-        'title': "Lorem Ipsum3",
-        'text': "",
-        'img': "",
-        'tags': []
-    },
-]
+news = []
+for _ in range(10):
+    news.append({
+        'title': fake.random_company_adjective() + ' ' + fake.company(),
+        'text': fake.english_text(),
+        'img': fake.image_url(),
+        'tags': [fake.word(part_of_speech='noun') for el in range(random.randint(1,10))]
+    })
 
 
 @app.route('/')
