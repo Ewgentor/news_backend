@@ -28,7 +28,7 @@ def news_get(news_id):
         try:
             return news[news_id - 1]
         except IndexError:
-            return abort(406, "Error: IndexError")
+            abort(404, "News not found")
     else:
         return news
 
@@ -36,30 +36,35 @@ def news_get(news_id):
 # Create
 @app.post('/news')
 def news_post():
-    title = request.form['title']
-    text = request.form['text']
-    img = request.form['img']
-    tags = request.form['tags'].split()
-    news.append({
-        'title': title,
-        'text': text,
-        'img': img,
-        'tags': tags,
-    })
-    return news
+    if not all(key in request.form for key in ['title', 'text','img', 'img']):
+        abort(404, "Missing required fields")
+    else:
+        title = request.form['title']
+        text = request.form['text']
+        img = request.form['img']
+        tags = request.form['tags'].split()
+        news.append({
+            'title': title,
+            'text': text,
+            'img': img,
+            'tags': tags,
+        })
+        return news
 
 
 # Update
 @app.patch('/news/<int:news_id>')
 def news_patch(news_id):
     try:
+        if news_id == 0:
+            raise IndexError
         for item in request.form.keys():
             if item in news[news_id - 1].keys():
                 news[news_id - 1][item] = request.form[f"{item}"]
             else:
-                return abort(406, "Error: KeyError")
+                abort(400, f"Invalid field: {item}")
     except IndexError:
-        return abort(406, "Error: IndexError")
+        abort(404, "News not found")
     return news
 
 
@@ -67,7 +72,9 @@ def news_patch(news_id):
 @app.delete('/news/<int:news_id>')
 def news_delete(news_id):
     try:
+        if news_id == 0:
+            raise IndexError
         news.pop(news_id - 1)
     except IndexError:
-        return abort(406, "Error: IndexError")
-    return news
+        abort(404, "News not found")
+    return '', 204
