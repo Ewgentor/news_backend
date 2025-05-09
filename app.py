@@ -70,3 +70,13 @@ def news_patch(news_id):
     except IndexError:
         return abort(406, "Error: IndexError")
     return news
+
+
+# Delete
+@app.delete('/news/<int:news_id>')
+def news_delete(news_id):
+    try:
+        news.pop(news_id - 1)
+    except IndexError:
+        return abort(406, "Error: IndexError")
+    return news
