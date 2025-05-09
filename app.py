@@ -8,8 +8,8 @@ fake = Faker()
 news = []
 for _ in range(10):
     news.append({
-        'title': fake.random_company_adjective() + ' ' + fake.company(),
-        'text': fake.english_text(),
+        'title': fake.word(part_of_speech='adjective') + ' ' + fake.company(),
+        'text': fake.text(),
         'img': fake.image_url(),
         'tags': [fake.word(part_of_speech='noun') for el in range(random.randint(1,10))]
     })
