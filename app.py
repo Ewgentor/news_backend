@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, request
+from flask import Flask, redirect, url_for, request, abort
 
 app = Flask(__name__)
 
@@ -23,18 +23,24 @@ news = [
     },
 ]
 
+
 @app.route('/')
 def index():
     return redirect(url_for('news_get'))
+
 
 # Read
 @app.get('/news', defaults={'news_id': 0})
 @app.get('/news/<int:news_id>')
 def news_get(news_id):
     if news_id > 0:
-        return news[news_id - 1]
+        try:
+            return news[news_id - 1]
+        except IndexError:
+            return abort(406, "Error: IndexError")
     else:
         return news
+
 
 # Create
 @app.post('/news')
@@ -49,4 +55,18 @@ def news_post():
         'img': img,
         'tags': tags,
     })
+    return news
+
+
+# Update
+@app.patch('/news/<int:news_id>')
+def news_patch(news_id):
+    try:
+        for item in request.form.keys():
+            if item in news[news_id - 1].keys():
+                news[news_id - 1][item] = request.form[f"{item}"]
+            else:
+                return abort(406, "Error: KeyError")
+    except IndexError:
+        return abort(406, "Error: IndexError")
     return news
