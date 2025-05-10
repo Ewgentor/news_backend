@@ -1,8 +1,9 @@
 from flask import Flask, redirect, url_for, request, abort
 from model import db, News
+import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost:5432/news?user=postgres&password=123'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://localhost:5432/news?user=postgres&password=123')
 
 db.init_app(app)
 
