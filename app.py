@@ -53,9 +53,14 @@ def news_post():
         abort(400, "Missing required fields")
     else:
         title = request.form['title']
+        if not title or len(title) > 100:
+            abort(400, "Title must be 1-100 characters long")
         text = request.form['text']
         img = request.form['img']
         tags = request.form['tags'].split()
+        if not tags:
+            abort(400, "Tags must not be empty")
+
         news = News(
             title=title,
             text=text,
