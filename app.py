@@ -1,18 +1,13 @@
 from flask import Flask, redirect, url_for, request, abort
-from faker import Faker
-import random
+from model import db, News
 
 app = Flask(__name__)
-fake = Faker()
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost:5432/news?user=postgres&password=123'
 
-news = []
-for _ in range(10):
-    news.append({
-        'title': fake.word(part_of_speech='adjective') + ' ' + fake.company(),
-        'text': fake.text(),
-        'img': fake.image_url(),
-        'tags': [fake.word(part_of_speech='noun') for el in range(random.randint(1,10))]
-    })
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()
 
 
 @app.route('/')
@@ -24,57 +19,84 @@ def index():
 @app.get('/news', defaults={'news_id': 0})
 @app.get('/news/<int:news_id>')
 def news_get(news_id):
-    if news_id > 0:
+    if news_id != 0:
         try:
-            return news[news_id - 1]
+            data = db.session.execute(db.select(News).where(News.id == news_id)).all()
+            news = [{
+                'title': row[0].title,
+                'text': row[0].text,
+                'img': row[0].img,
+                'tags': row[0].tags,
+            } for row in data]
+            if news:
+                return news
+            else:
+                raise IndexError
         except IndexError:
             abort(404, "News not found")
     else:
+        data = db.session.execute(db.select(News).order_by(News.id)).all()
+        news = [{
+            'id': row[0].id,
+            'title': row[0].title,
+            'text': row[0].text,
+            'img': row[0].img,
+            'tags': row[0].tags,
+        } for row in data]
         return news
 
 
 # Create
 @app.post('/news')
 def news_post():
-    if not all(key in request.form for key in ['title', 'text','img', 'img']):
+    if not all(key in request.form for key in ['title', 'text','img', 'tags']):
         abort(400, "Missing required fields")
     else:
         title = request.form['title']
         text = request.form['text']
         img = request.form['img']
         tags = request.form['tags'].split()
-        news.append({
-            'title': title,
-            'text': text,
-            'img': img,
-            'tags': tags,
-        })
-        return news
+        news = News(
+            title=title,
+            text=text,
+            img=img,
+            tags=tags
+        )
+        db.session.add(news)
+        db.session.commit()
+        return {'message': 'Created'}, 201
 
 
 # Update
 @app.patch('/news/<int:news_id>')
 def news_patch(news_id):
     try:
-        if news_id == 0:
-            raise IndexError
         for item in request.form.keys():
-            if item in news[news_id - 1].keys():
-                news[news_id - 1][item] = request.form[f"{item}"]
+            if item in ['title', 'img', 'text', 'tags']:
+                data = db.session.query(News).filter(News.id == news_id).update({item: request.form[item]})
+                if data == 0:
+                    db.session.rollback()
+                    raise IndexError
+                else:
+                    db.session.commit()
             else:
                 abort(400, f"Invalid field: {item}")
     except IndexError:
         abort(404, "News not found")
-    return news
+    return {'message': 'Updated'}, 200
 
 
 # Delete
 @app.delete('/news/<int:news_id>')
 def news_delete(news_id):
     try:
-        if news_id == 0:
+        data = db.session.query(News).filter(News.id == news_id).delete()
+        if data == 0:
+            db.session.rollback()
             raise IndexError
-        news.pop(news_id - 1)
+        else:
+            db.session.commit()
     except IndexError:
+        db.session.rollback()
         abort(404, "News not found")
     return '', 204
