@@ -37,7 +37,7 @@ def news_get(news_id):
 @app.post('/news')
 def news_post():
     if not all(key in request.form for key in ['title', 'text','img', 'img']):
-        abort(404, "Missing required fields")
+        abort(400, "Missing required fields")
     else:
         title = request.form['title']
         text = request.form['text']
