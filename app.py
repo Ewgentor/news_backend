@@ -1,6 +1,10 @@
 from flask import Flask, redirect, url_for, request, abort
+from sqlalchemy import desc
+from dotenv import load_dotenv
 from model import db, News
 import os
+
+load_dotenv()
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://localhost:5432/news?user=postgres&password=123')
@@ -50,15 +54,16 @@ def news_get(news_id):
 # Create
 @app.post('/news')
 def news_post():
-    if not all(key in request.form for key in ['title', 'text','img', 'tags']):
+    res_json = request.get_json()
+    if not all(key in res_json for key in ['title', 'text','img', 'tags']):
         abort(400, "Missing required fields")
     else:
-        title = request.form['title']
+        title = res_json['title']
         if not title or len(title) > 100:
             abort(400, "Title must be 1-100 characters long")
-        text = request.form['text']
-        img = request.form['img']
-        tags = request.form['tags'].split()
+        text = res_json['text']
+        img = res_json['img']
+        tags = res_json['tags']
         if not tags:
             abort(400, "Tags must not be empty")
 
@@ -70,16 +75,18 @@ def news_post():
         )
         db.session.add(news)
         db.session.commit()
-        return {'message': 'Created'}, 201
+        data = db.session.execute(db.select(News).order_by(desc(News.id)).limit(1)).all()
+        return {'message': 'Created', 'id': data[0][0].id}, 201
 
 
 # Update
 @app.patch('/news/<int:news_id>')
 def news_patch(news_id):
+    res_json = request.get_json()
     try:
-        for item in request.form.keys():
+        for item in res_json.keys():
             if item in ['title', 'img', 'text', 'tags']:
-                data = db.session.query(News).filter(News.id == news_id).update({item: request.form[item]})
+                data = db.session.query(News).filter(News.id == news_id).update({item: res_json[item]})
                 if data == 0:
                     db.session.rollback()
                     raise IndexError
