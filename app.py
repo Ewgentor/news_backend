@@ -16,10 +16,10 @@ def index():
 
 
 # Read
-@app.get('/news', defaults={'news_id': 0})
+@app.get('/news', defaults={'news_id': -1})
 @app.get('/news/<int:news_id>')
 def news_get(news_id):
-    if news_id != 0:
+    if news_id != -1:
         try:
             data = db.session.execute(db.select(News).where(News.id == news_id)).all()
             news = [{
