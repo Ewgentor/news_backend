@@ -94,8 +94,6 @@ def news_patch(news_id):
                     db.session.commit()
             else:
                 abort(400, f"Invalid field: {item}")
-            else:
-                abort(400, f"Invalid field: {item}")
     except IndexError:
         db.session.rollback()
         abort(404, "News not found")
