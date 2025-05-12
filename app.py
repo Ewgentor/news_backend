@@ -86,16 +86,20 @@ def news_patch(news_id):
     try:
         for item in res_json.keys():
             if item in ['title', 'img', 'text', 'tags']:
+                # Правильнее было бы сделать это одним запросом и не нагружать базу данных
                 data = db.session.query(News).filter(News.id == news_id).update({item: res_json[item]})
                 if data == 0:
-                    db.session.rollback()
                     raise IndexError
                 else:
                     db.session.commit()
             else:
                 abort(400, f"Invalid field: {item}")
+            else:
+                abort(400, f"Invalid field: {item}")
     except IndexError:
+        db.session.rollback()
         abort(404, "News not found")
+    db.session.commit()
     return {'message': 'Updated'}, 200
 
 
@@ -105,7 +109,6 @@ def news_delete(news_id):
     try:
         data = db.session.query(News).filter(News.id == news_id).delete()
         if data == 0:
-            db.session.rollback()
             raise IndexError
         else:
             db.session.commit()
