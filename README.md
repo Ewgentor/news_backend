@@ -36,6 +36,10 @@ psql -c 'CREATE DATABASE news_db;'
 flask run --host=127.0.0.1 --post=5000
 ```
 
+## API документация
+Swagger-документация доступна после запуска сервера:
+`http://127.0.0.1:5000/apidocs`
+
 ## Примеры запросов (cURL)
 
 ### Создать новость
@@ -80,4 +84,5 @@ curl -X PATCH http://127.0.0.1:5000/news \
 - **Python 3.11+**
 - **Flask**
 - **Flask-SQLAlchemy**
+- **Flasgger**
 - **PostgreSQL**
